@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>贪吃蛇游戏</title>
+  <style>
+    /* 整体背景和字体 */
+    body {
+      margin: 0;
+      padding: 0;
+      background-color: #f0f8ff; /* 浅蓝色背景 */
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+    }
+
+    /* 白色卡片容器 */
+    .container {
+      background-color: #ffffff;
+      border-radius: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      width: 480px; /* 与示例图近似宽度 */
+      padding: 20px;
+    }
+
+    /* 标题 */
+    .title {
+      text-align: center;
+      font-size: 24px;
+      font-weight: bold;
+      color: #1B36C0; /* 深蓝色标题 */
+    }
+
+    /* 得分显示 */
+    .score {
+      margin-top: 10px;
+      font-size: 18px;
+      color: #333333;
+    }
+
+    /* 暂停/重新开始 按钮区 */
+    .controls {
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+      margin-top: 10px;
+    }
+    .controls button {
+      border: none;
+      border-radius: 4px;
+      padding: 6px 12px;
+      font-size: 14px;
+      cursor: pointer;
+      color: #ffffff;
+      outline: none;
+    }
+    #pauseBtn {
+      background-color: #FFC107; /* 黄色 */
+    }
+    #resetBtn {
+      background-color: #1B36C0; /* 深蓝色 */
+    }
+
+    /* 速度选择区 */
+    .speed-section {
+      margin-top: 12px;
+    }
+    .speed-section span {
+      font-size: 16px;
+      color: #333333;
+    }
+    .speed-buttons {
+      margin-top: 5px;
+      display: flex;
+      gap: 5px;
+    }
+    .speed-buttons button {
+      flex: 1;
+      padding: 6px 0;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      background-color: #ffffff;
+      cursor: pointer;
+      font-size: 14px;
+      outline: none;
+    }
+    .speed-buttons button.active {
+      background-color: #E0E0E0;
+    }
+
+    /* 食物说明图例 */
+    .legend {
+      margin-top: 15px;
+      font-size: 14px;
+      color: #333333;
+    }
+    .legend-item {
+      display: flex;
+      align-items: center;
+      margin-top: 5px;
+    }
+    .legend-item .color-box {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      margin-right: 6px;
+      display: inline-block;
+    }
+
+    /* 游戏画布外框 */
+    .game-area {
+      margin-top: 15px;
+      background-color: #1B36C0; /* 深蓝游戏背景 */
+      border-radius: 8px;
+      position: relative;
+      width: 400px;
+      height: 400px;
+      margin-left: auto;
+      margin-right: auto;
+      box-shadow: inset 0 0 0 2px rgba(0,0,0,0.1);
+    }
+    #gameCanvas {
+      display: block;
+      background-color: transparent;
+      margin: 0 auto;
+      width: 400px;
+      height: 400px;
+    }
+
+    /* 方向按钮区 */
+    .arrow-controls {
+      margin-top: 15px;
+      display: flex;
+      justify-content: center;
+    }
+    .arrow-controls .row {
+      display: flex;
+      justify-content: center;
+    }
+    .arrow-controls button {
+      width: 60px;
+      height: 60px;
+      margin: 5px;
+      border: none;
+      border-radius: 6px;
+      background-color: #E0E0E0;
+      font-size: 24px;
+      cursor: pointer;
+      outline: none;
+      user-select: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- 标题 -->
+    <div class="title">贪吃蛇游戏</div>
+
+    <!-- 得分 -->
+    <div class="score">得分: <span id="score">0</span></div>
+
+    <!-- 暂停 & 重新开始 按钮 -->
+    <div class="controls">
+      <button id="pauseBtn">暂停</button>
+      <button id="resetBtn">重新开始</button>
+    </div>
+
+    <!-- 速度选择 -->
+    <div class="speed-section">
+      <span>游戏速度：</span>
+      <div class="speed-buttons">
+        <button data-speed="200">慢速</button>
+        <button data-speed="150" class="active">中速</button>
+        <button data-speed="100">快速</button>
+        <button data-speed="50">极速</button>
+      </div>
+    </div>
+
+    <!-- 食物说明图例 -->
+    <div class="legend">
+      <div class="legend-item">
+        <span class="color-box" style="background-color: red;"></span>
+        普通食物 - 得1分
+      </div>
+      <div class="legend-item">
+        <span class="color-box" style="background-color: yellow;"></span>
+        特殊食物 - 得3分 (8秒后消失)
+      </div>
+    </div>
+
+    <!-- 游戏区域 -->
+    <div class="game-area">
+      <canvas id="gameCanvas" width="400" height="400"></canvas>
+    </div>
+
+    <!-- 方向按钮 -->
+    <div class="arrow-controls">
+      <div class="row">
+        <button id="upBtn">↑</button>
+      </div>
+      <div class="row">
+        <button id="leftBtn">←</button>
+        <button id="downBtn">↓</button>
+        <button id="rightBtn">→</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    /**** 基本变量和 DOM 引用 ****/
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    const scoreElem = document.getElementById('score');
+    const pauseBtn = document.getElementById('pauseBtn');
+    const resetBtn = document.getElementById('resetBtn');
+    const speedButtons = document.querySelectorAll('.speed-buttons button');
+
+    const upBtn    = document.getElementById('upBtn');
+    const downBtn  = document.getElementById('downBtn');
+    const leftBtn  = document.getElementById('leftBtn');
+    const rightBtn = document.getElementById('rightBtn');
+
+    // 网格行列数，以及每个格子的像素大小
+    const ROWS = 20;
+    const COLS = 20;
+    const CELL_SIZE = canvas.width / COLS; // 400/20 = 20px
+
+    let snake = [];               // 存放蛇身坐标的数组
+    let direction = { x: 1, y: 0 }; // 初始向右移动
+    let food = null;              // 普通食物坐标
+    let specialFood = null;       // 特殊食物坐标
+    let specialTimeout = null;    // 用于清除特殊食物的定时器
+    let score = 0;                // 当前得分
+    let gameInterval = null;      // 游戏主循环的 setInterval 返回值
+    let intervalTime = 150;       // 默认速度：150ms
+    let paused = false;           // 暂停状态标志
+
+    /**** 初始化游戏 ****/
+    function initGame() {
+      // 停掉已有的循环和特殊食物定时器
+      if (gameInterval) clearInterval(gameInterval);
+      if (specialTimeout) clearTimeout(specialTimeout);
+
+      // 重置参数
+      snake = [];
+      // 蛇初始长度 5 格，位于画布中央
+      const startX = Math.floor(COLS / 2);
+      const startY = Math.floor(ROWS / 2);
+      for (let i = 0; i < 5; i++) {
+        snake.push({ x: startX - i, y: startY });
+      }
+      direction = { x: 1, y: 0 };
+      score = 0;
+      scoreElem.textContent = score;
+
+      // 生成第一个普通食物
+      spawnFood();
+      // 取消特殊食物（若有）
+      specialFood = null;
+
+      paused = false;
+      pauseBtn.textContent = '暂停';
+
+      // 启动游戏循环
+      gameInterval = setInterval(gameLoop, intervalTime);
+
+      // 安排定时器：在游戏开始后，每隔 12～18 秒随机出现一次特殊食物
+      scheduleSpecialSpawn();
+    }
+
+    /**** 生成普通食物 ****/
+    function spawnFood() {
+      let valid = false;
+      let x, y;
+      while (!valid) {
+        x = Math.floor(Math.random() * COLS);
+        y = Math.floor(Math.random() * ROWS);
+        // 保证食物不与蛇身重叠
+        valid = !snake.some(seg => seg.x === x && seg.y === y);
+      }
+      food = { x, y };
+    }
+
+    /**** 生成特殊食物，并设置 8 秒后消失 ****/
+    function spawnSpecialFood() {
+      if (specialFood) return; // 如果已有特殊食物，就不再重复生成
+
+      let valid = false;
+      let x, y;
+      while (!valid) {
+        x = Math.floor(Math.random() * COLS);
+        y = Math.floor(Math.random() * ROWS);
+        valid = 
+          !snake.some(seg => seg.x === x && seg.y === y) &&
+          !(food && food.x === x && food.y === y);
+      }
+      specialFood = { x, y };
+
+      // 8 秒后若仍未被吃掉，则自动消失
+      specialTimeout = setTimeout(() => {
+        specialFood = null;
+        specialTimeout = null;
+      }, 8000);
+    }
+
+    /**** 随机安排下一次特殊食物的出现 ****/
+    function scheduleSpecialSpawn() {
+      // 随机取 12000～18000 ms 之间的一个值，避免总是固定间隔
+      const t = 12000 + Math.random() * 6000;
+      setTimeout(() => {
+        if (!specialFood) spawnSpecialFood();
+        scheduleSpecialSpawn();
+      }, t);
+    }
+
+    /**** 游戏主循环 ****/
+    function gameLoop() {
+      if (paused) return;
+
+      // 计算新的蛇头坐标
+      const head = { 
+        x: snake[0].x + direction.x,
+        y: snake[0].y + direction.y
+      };
+
+      // 边界检测：碰到墙算游戏结束
+      if (head.x < 0 || head.x >= COLS || head.y < 0 || head.y >= ROWS) {
+        return gameOver();
+      }
+      // 自身相撞检测
+      if (snake.some(seg => seg.x === head.x && seg.y === head.y)) {
+        return gameOver();
+      }
+
+      // 将新头插入到数组开头
+      snake.unshift(head);
+
+      // 判断是否吃到普通食物
+      if (food && head.x === food.x && head.y === food.y) {
+        score += 1;
+        scoreElem.textContent = score;
+        spawnFood();
+      }
+      // 判断是否吃到特殊食物
+      else if (specialFood && head.x === specialFood.x && head.y === specialFood.y) {
+        score += 3;
+        scoreElem.textContent = score;
+        clearTimeout(specialTimeout);
+        specialFood = null;
+        specialTimeout = null;
+      }
+      else {
+        // 正常移动，不增长：删除尾部
+        snake.pop();
+      }
+
+      // 重新绘制全局
+      drawAll();
+    }
+
+    /**** 绘制函数：背景、蛇身、食物、网格（可选，若想要网格浅线可打开） ****/
+    function drawAll() {
+      // 清空画布
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      // （可选）画浅色网格，若不需要可以注释掉
+      // ctx.strokeStyle = 'rgba(255,255,255,0.1)';
+      // for (let i = 0; i <= ROWS; i++) {
+      //   ctx.beginPath();
+      //   ctx.moveTo(0, i * CELL_SIZE);
+      //   ctx.lineTo(canvas.width, i * CELL_SIZE);
+      //   ctx.stroke();
+      // }
+      // for (let j = 0; j <= COLS; j++) {
+      //   ctx.beginPath();
+      //   ctx.moveTo(j * CELL_SIZE, 0);
+      //   ctx.lineTo(j * CELL_SIZE, canvas.height);
+      //   ctx.stroke();
+      // }
+
+      // 画普通食物 (红色圆)
+      if (food) {
+        ctx.fillStyle = 'red';
+        ctx.beginPath();
+        ctx.arc(
+          food.x * CELL_SIZE + CELL_SIZE / 2,
+          food.y * CELL_SIZE + CELL_SIZE / 2,
+          CELL_SIZE / 2 - 2,
+          0, Math.PI * 2
+        );
+        ctx.fill();
+      }
+
+      // 画特殊食物 (黄色圆)
+      if (specialFood) {
+        ctx.fillStyle = 'yellow';
+        ctx.beginPath();
+        ctx.arc(
+          specialFood.x * CELL_SIZE + CELL_SIZE / 2,
+          specialFood.y * CELL_SIZE + CELL_SIZE / 2,
+          CELL_SIZE / 2 - 2,
+          0, Math.PI * 2
+        );
+        ctx.fill();
+      }
+
+      // 画蛇身 (绿色方块)
+      ctx.fillStyle = '#00C27A';
+      snake.forEach((seg, idx) => {
+        ctx.fillRect(
+          seg.x * CELL_SIZE + 2,
+          seg.y * CELL_SIZE + 2,
+          CELL_SIZE - 4,
+          CELL_SIZE - 4
+        );
+      });
+    }
+
+    /**** 游戏结束 ****/
+    function gameOver() {
+      clearInterval(gameInterval);
+      if (specialTimeout) clearTimeout(specialTimeout);
+      alert('💥 游戏结束！你的得分：' + score);
+    }
+
+    /**** 改变方向 ****/
+    function changeDirection(newDir) {
+      // 防止原方向反向直接调头
+      if ((newDir.x === -direction.x && newDir.y === 0) ||
+          (newDir.y === -direction.y && newDir.x === 0)) {
+        return;
+      }
+      direction = newDir;
+    }
+
+    /**** 绑定键盘事件 ****/
+    document.addEventListener('keydown', e => {
+      switch (e.key) {
+        case 'ArrowUp':
+        case 'w':
+        case 'W':
+          changeDirection({ x: 0, y: -1 });
+          break;
+        case 'ArrowDown':
+        case 's':
+        case 'S':
+          changeDirection({ x: 0, y: 1 });
+          break;
+        case 'ArrowLeft':
+        case 'a':
+        case 'A':
+          changeDirection({ x: -1, y: 0 });
+          break;
+        case 'ArrowRight':
+        case 'd':
+        case 'D':
+          changeDirection({ x: 1, y: 0 });
+          break;
+      }
+    });
+
+    /**** 绑定页面方向按钮 ****/
+    upBtn.addEventListener('click',    () => changeDirection({ x: 0, y: -1 }));
+    downBtn.addEventListener('click',  () => changeDirection({ x: 0, y: 1 }));
+    leftBtn.addEventListener('click',  () => changeDirection({ x: -1, y: 0 }));
+    rightBtn.addEventListener('click', () => changeDirection({ x: 1, y: 0 }));
+
+    /**** 暂停 / 继续 ****/
+    pauseBtn.addEventListener('click', () => {
+      if (!paused) {
+        // 暂停：清除循环
+        paused = true;
+        clearInterval(gameInterval);
+        pauseBtn.textContent = '继续';
+      } else {
+        // 继续：重新启动循环
+        paused = false;
+        pauseBtn.textContent = '暂停';
+        gameInterval = setInterval(gameLoop, intervalTime);
+      }
+    });
+
+    /**** 重新开始 ****/
+    resetBtn.addEventListener('click', () => {
+      initGame();
+    });
+
+    /**** 速度按钮切换 ****/
+    speedButtons.forEach(btn => {
+      btn.addEventListener('click', () => {
+        // 取消所有按钮的 active
+        speedButtons.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        intervalTime = parseInt(btn.dataset.speed);
+        // 如果当前未暂停，则立即切换速度
+        if (!paused) {
+          clearInterval(gameInterval);
+          gameInterval = setInterval(gameLoop, intervalTime);
+        }
+      });
+    });
+
+    // 页面载入完成后，初始化游戏
+    window.onload = () => {
+      initGame();
+    };
+  </script>
+</body>
+</html>
