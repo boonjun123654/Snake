@@ -226,31 +226,31 @@
     <div class="title">选择游戏难度</div>
     <div>简单：蛇速慢；中等：蛇速适中；困难：蛇速快</div>
     <div class="buttons">
-      <button id="easyBtn">简单</button>
-      <button id="mediumBtn">中等</button>
-      <button id="hardBtn">困难</button>
+      <button id="easyBtn">Easy</button>
+      <button id="mediumBtn">Medium</button>
+      <button id="hardBtn">Hard</button>
     </div>
   </div>
 
   <!-- 游戏主体 容器（默认隐藏） -->
   <div class="container">
     <!-- 标题 -->
-    <div class="title">贪吃蛇游戏</div>
+    <div class="title">GameBot_Snake</div>
     <!-- 得分 -->
-    <div class="score">得分: <span id="score">0</span></div>
+    <div class="score">Score: <span id="score">0</span></div>
     <!-- 暂停 按钮 -->
     <div class="controls">
-      <button id="pauseBtn">暂停</button>
+      <button id="pauseBtn">Pause</button>
     </div>
     <!-- 食物图例 -->
     <div class="legend">
       <div class="legend-item">
         <span class="color-box" style="background-color: red;"></span>
-        普通食物 - 得1分
+        Regular - 1 Point
       </div>
       <div class="legend-item">
-        <span class="color-box" style="background-color: yellow;"></span>
-        特殊食物 - 得3分 (8秒后消失)
+        <span class="color-box" style="background-color: #ffa500;"></span>
+        Special - 3 Point (8秒后消失)
       </div>
     </div>
     <!-- 游戏区域 -->
@@ -273,19 +273,19 @@
   <!-- 暂停模态框 -->
   <div id="pauseModal" class="modal-overlay">
     <div class="modal-content">
-      <p>⏸️ 游戏已暂停</p>
-      <button id="resumeBtn">继续游戏</button>
+      <p>⏸️ Game Paused</p>
+      <button id="resumeBtn">Continue</button>
     </div>
   </div>
 
   <!-- 游戏结束模态框 -->
   <div id="gameOverModal" class="modal-overlay">
     <div class="modal-content">
-      <p id="gameOverText">💥 游戏结束！你的得分：0</p>
-      <p>重新来多一局？</p>
-      <button data-speed="300">慢</button>
-      <button data-speed="200">中</button>
-      <button data-speed="150">快</button>
+      <p id="gameOverText">Game Over! Your Score：0</p>
+      <p>Play again？</p>
+      <button data-speed="300">Easy</button>
+      <button data-speed="200">Medium</button>
+      <button data-speed="150">Hard</button>
     </div>
   </div>
 
