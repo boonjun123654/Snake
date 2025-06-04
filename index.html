@@ -15,6 +15,7 @@
       justify-content: center;
       align-items: center;
       min-height: 100vh;
+      position: relative; /* 便于子元素定位 */
     }
 
     /*—— 难度选择屏幕 ——*/
@@ -25,6 +26,7 @@
       width: 360px;
       padding: 24px;
       text-align: center;
+      z-index: 10;
     }
     #difficulty-screen .title {
       font-size: 24px;
@@ -58,7 +60,7 @@
       background-color: #dc3545; /* 红色 - 困难 */
     }
 
-    /*—— 游戏容器（初始设为隐藏，待选完难度后显示） ——*/
+    /*—— 游戏容器（初始隐藏，待选完难度后显示） ——*/
     .container {
       display: none;
       background-color: #ffffff;
@@ -66,6 +68,8 @@
       box-shadow: 0 2px 8px rgba(0,0,0,0.1);
       width: 480px;
       padding: 20px;
+      position: relative;
+      z-index: 1;
     }
 
     /*—— 标题 & 得分 ——*/
@@ -81,7 +85,7 @@
       color: #333333;
     }
 
-    /*—— 暂停 & 重新开始 按钮 ——*/
+    /*—— 暂停 按钮 ——*/
     .container .controls {
       display: flex;
       justify-content: flex-end;
@@ -100,9 +104,7 @@
     #pauseBtn {
       background-color: #FFC107; /* 黄色 */
     }
-    #resetBtn {
-      background-color: #1B36C0; /* 深蓝色 */
-    }
+    /* 已取消“重新开始”按钮，删除其 CSS */
 
     /*—— 游戏图例：红色/黄色食物 ——*/
     .container .legend {
@@ -166,6 +168,56 @@
       outline: none;
       user-select: none;
     }
+
+    /*—— 模态框通用样式 ——*/
+    .modal-overlay {
+      display: none; /* 默认隐藏 */
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: rgba(0, 0, 0, 0.5);
+      justify-content: center;
+      align-items: center;
+      z-index: 20;
+    }
+    .modal-content {
+      background: #ffffff;
+      border-radius: 8px;
+      padding: 20px;
+      width: 300px;
+      text-align: center;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    }
+    .modal-content p {
+      margin-bottom: 16px;
+      font-size: 18px;
+      color: #333333;
+    }
+    .modal-content button {
+      margin: 5px;
+      padding: 8px 16px;
+      border: none;
+      border-radius: 6px;
+      font-size: 16px;
+      cursor: pointer;
+      outline: none;
+      background-color: #1B36C0;
+      color: #ffffff;
+    }
+    .modal-content button[data-speed="200"] {
+      background-color: #28a745; /* 绿色 ＝ 慢 */
+    }
+    .modal-content button[data-speed="150"] {
+      background-color: #ffc107; /* 黄色 ＝ 中 */
+    }
+    .modal-content button[data-speed="100"] {
+      background-color: #dc3545; /* 红色 ＝ 快 */
+    }
+    .modal-content button#resumeBtn {
+      background-color: #28a745; /* 绿色“继续游戏” */
+    }
   </style>
 </head>
 <body>
@@ -186,10 +238,9 @@
     <div class="title">贪吃蛇游戏</div>
     <!-- 得分 -->
     <div class="score">得分: <span id="score">0</span></div>
-    <!-- 暂停 & 重新开始 -->
+    <!-- 暂停 按钮 -->
     <div class="controls">
       <button id="pauseBtn">暂停</button>
-      <button id="resetBtn">重新开始</button>
     </div>
     <!-- 食物图例 -->
     <div class="legend">
@@ -219,6 +270,25 @@
     </div>
   </div>
 
+  <!-- 暂停模态框 -->
+  <div id="pauseModal" class="modal-overlay">
+    <div class="modal-content">
+      <p>⏸️ 游戏已暂停</p>
+      <button id="resumeBtn">继续游戏</button>
+    </div>
+  </div>
+
+  <!-- 游戏结束模态框 -->
+  <div id="gameOverModal" class="modal-overlay">
+    <div class="modal-content">
+      <p id="gameOverText">💥 游戏结束！你的得分：0</p>
+      <p>重新来多一局？</p>
+      <button data-speed="200">慢</button>
+      <button data-speed="150">中</button>
+      <button data-speed="100">快</button>
+    </div>
+  </div>
+
   <script>
     /***** 全局配置（按新需求改为16×16） *****/
     const ROWS = 16;
@@ -235,12 +305,16 @@
     const ctx = canvas.getContext('2d');
     const scoreElem = document.getElementById('score');
     const pauseBtn = document.getElementById('pauseBtn');
-    const resetBtn = document.getElementById('resetBtn');
 
     const upBtn    = document.getElementById('upBtn');
     const downBtn  = document.getElementById('downBtn');
     const leftBtn  = document.getElementById('leftBtn');
     const rightBtn = document.getElementById('rightBtn');
+
+    const pauseModal = document.getElementById('pauseModal');
+    const resumeBtn  = document.getElementById('resumeBtn');
+    const gameOverModal = document.getElementById('gameOverModal');
+    const gameOverText  = document.getElementById('gameOverText');
 
     /***** 动态变量 *****/
     let snake = [];               // 蛇身坐标数组
@@ -250,10 +324,10 @@
     let specialTimeout = null;    // 特殊食物消失计时器
     let score = 0;                // 当前得分
     let gameInterval = null;      // 主循环定时器
-    let intervalTime = 150;       // 默认帧间隔（会根据难度设置）
+    let intervalTime = 150;       // 帧间隔（根据难度调整）
     let paused = false;           // 暂停状态标志
 
-    // CELL_SIZE 会随着 canvas.width / COLS 自动计算。现在是 400/16 = 25px
+    // 每个格子的像素大小：400 / 16 = 25px
     const CELL_SIZE = canvas.width / COLS;
 
     /***** 难度按钮 点击事件 *****/
@@ -273,7 +347,7 @@
 
     /***** 初始化游戏 *****/
     function initGame() {
-      // 如果之前有计时器，先清除
+      // 清除之前的定时器
       if (gameInterval) clearInterval(gameInterval);
       if (specialTimeout) clearTimeout(specialTimeout);
 
@@ -296,6 +370,10 @@
 
       paused = false;
       pauseBtn.textContent = '暂停';
+
+      // 隐藏任何可能残留的模态框
+      pauseModal.style.display = 'none';
+      gameOverModal.style.display = 'none';
 
       // 启动主循环
       gameInterval = setInterval(gameLoop, intervalTime);
@@ -323,7 +401,7 @@
       while (!valid) {
         x = Math.floor(Math.random() * COLS);
         y = Math.floor(Math.random() * ROWS);
-        valid = 
+        valid =
           !snake.some(seg => seg.x === x && seg.y === y) &&
           !(food && food.x === x && food.y === y);
       }
@@ -387,24 +465,9 @@
       drawAll();
     }
 
-    /***** 绘制所有元素 *****/
+    /***** 绘制所有元素（含圆角蛇身） *****/
     function drawAll() {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-      // （可选）绘制网格线，若不需要可注释
-      // ctx.strokeStyle = 'rgba(255,255,255,0.1)';
-      // for (let i = 0; i <= ROWS; i++) {
-      //   ctx.beginPath();
-      //   ctx.moveTo(0, i * CELL_SIZE);
-      //   ctx.lineTo(canvas.width, i * CELL_SIZE);
-      //   ctx.stroke();
-      // }
-      // for (let j = 0; j <= COLS; j++) {
-      //   ctx.beginPath();
-      //   ctx.moveTo(j * CELL_SIZE, 0);
-      //   ctx.lineTo(j * CELL_SIZE, canvas.height);
-      //   ctx.stroke();
-      // }
 
       // 画普通食物（红色圆）
       if (food) {
@@ -432,23 +495,45 @@
         ctx.fill();
       }
 
-      // 画蛇身（绿色方块）
+      // 画蛇身（圆角方块）
       ctx.fillStyle = '#00C27A';
       snake.forEach(seg => {
-        ctx.fillRect(
+        drawRoundRect(
+          ctx,
           seg.x * CELL_SIZE + 2,
           seg.y * CELL_SIZE + 2,
           CELL_SIZE - 4,
-          CELL_SIZE - 4
+          CELL_SIZE - 4,
+          5  /* 圆角半径：5px */
         );
       });
     }
 
-    /***** 游戏结束 *****/
+    /***** 工具：在 Canvas 上绘制圆角矩形 *****/
+    function drawRoundRect(ctx, x, y, width, height, radius) {
+      ctx.beginPath();
+      ctx.moveTo(x + radius, y);
+      ctx.lineTo(x + width - radius, y);
+      ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
+      ctx.lineTo(x + width, y + height - radius);
+      ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+      ctx.lineTo(x + radius, y + height);
+      ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
+      ctx.lineTo(x, y + radius);
+      ctx.quadraticCurveTo(x, y, x + radius, y);
+      ctx.closePath();
+      ctx.fill();
+    }
+
+    /***** 游戏结束（弹出自定义模态框） *****/
     function gameOver() {
       clearInterval(gameInterval);
       if (specialTimeout) clearTimeout(specialTimeout);
-      alert('💥 游戏结束！你的得分：' + score);
+
+      // 更新模态框内容，显示当前得分
+      gameOverText.textContent = '💥 游戏结束！你的得分：' + score;
+      // 显示“游戏结束”模态框
+      gameOverModal.style.display = 'flex';
     }
 
     /***** 方向切换（防止瞬间反向调头） *****/
@@ -492,29 +577,40 @@
     leftBtn.addEventListener('click',  () => changeDirection({ x: -1, y: 0 }));
     rightBtn.addEventListener('click', () => changeDirection({ x: 1, y: 0 }));
 
-    /***** 暂停 / 继续 —— 需弹窗提示 *****/
+    /***** 暂停 —— 显示模态框，内含“继续游戏”按钮 *****/
     pauseBtn.addEventListener('click', () => {
       if (!paused) {
-        // 暂停
+        // 暂停游戏逻辑
         paused = true;
         clearInterval(gameInterval);
         pauseBtn.textContent = '继续';
-        alert('⏸️ 游戏已暂停');
-      } else {
-        // 继续
-        paused = false;
-        pauseBtn.textContent = '暂停';
-        alert('▶️ 游戏继续');
-        gameInterval = setInterval(gameLoop, intervalTime);
+        // 显示“暂停”模态框
+        pauseModal.style.display = 'flex';
       }
     });
 
-    /***** 重新开始 *****/
-    resetBtn.addEventListener('click', () => {
-      initGame();
+    /***** “继续游戏”按钮功能（隐藏模态框并恢复游戏） *****/
+    resumeBtn.addEventListener('click', () => {
+      paused = false;
+      pauseBtn.textContent = '暂停';
+      pauseModal.style.display = 'none';
+      // 重新启动主循环
+      gameInterval = setInterval(gameLoop, intervalTime);
     });
 
-    // 不再有速度按钮，弃用原先的 speedButtons 逻辑
+    /***** 游戏结束模态框中 三个按钮 重新开始不同难度 *****/
+    gameOverModal.querySelectorAll('button[data-speed]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const newSpeed = parseInt(btn.getAttribute('data-speed'));
+        intervalTime = newSpeed;
+        // 隐藏游戏结束模态框
+        gameOverModal.style.display = 'none';
+        // 重新初始化游戏
+        initGame();
+      });
+    });
+
+    // （无需“重新开始”按钮逻辑，已全部替换成模态框操作）
 
   </script>
 </body>
