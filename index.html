@@ -223,8 +223,7 @@
 <body>
   <!-- 难度选择屏幕 -->
   <div id="difficulty-screen">
-    <div class="title">选择游戏难度</div>
-    <div>简单：蛇速慢；中等：蛇速适中；困难：蛇速快</div>
+    <div class="title">Select Game Difficulty</div>
     <div class="buttons">
       <button id="easyBtn">Easy</button>
       <button id="mediumBtn">Medium</button>
@@ -250,7 +249,7 @@
       </div>
       <div class="legend-item">
         <span class="color-box" style="background-color: #ffa500;"></span>
-        Special - 3 Point (8秒后消失)
+        Special - 3 Point
       </div>
     </div>
     <!-- 游戏区域 -->
@@ -535,7 +534,7 @@
       if (specialTimeout) clearTimeout(specialTimeout);
 
       // 更新模态框内容，显示当前得分
-      gameOverText.textContent = '💥 游戏结束！你的得分：' + score;
+      gameOverText.textContent = 'Game Over! Your Score：' + score;
       // 显示“游戏结束”模态框
       gameOverModal.style.display = 'flex';
     }
