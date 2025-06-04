@@ -291,8 +291,8 @@
 
   <script>
     /***** 全局配置（按新需求改为16×16） *****/
-    const ROWS = 16;
-    const COLS = 16;
+    const ROWS = 15;
+    const COLS = 15;
 
     /***** 页面元素引用 *****/
     const difficultyScreen = document.getElementById('difficulty-screen');
@@ -484,7 +484,10 @@
 
       // 画特殊食物（黄色圆）
       if (specialFood) {
-        ctx.fillStyle = 'yellow';
+        ctx.save();                                            // 保存当前状态
+        ctx.shadowBlur = 15;                                   // 发光半径
+        ctx.shadowColor = '#C71585';                           // 发光颜色（紫色）
+        ctx.fillStyle = '#C71585';
         ctx.beginPath();
         ctx.arc(
           specialFood.x * CELL_SIZE + CELL_SIZE / 2,
@@ -493,6 +496,7 @@
           0, Math.PI * 2
         );
         ctx.fill();
+        ctx.restore();
       }
 
       // 画蛇身（圆角方块）
