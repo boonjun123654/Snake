@@ -369,7 +369,7 @@
       specialFood = null;
 
       paused = false;
-      pauseBtn.textContent = '暂停';
+      pauseBtn.textContent = 'Paused';
 
       // 隐藏任何可能残留的模态框
       pauseModal.style.display = 'none';
@@ -587,7 +587,7 @@
         // 暂停游戏逻辑
         paused = true;
         clearInterval(gameInterval);
-        pauseBtn.textContent = '继续';
+        pauseBtn.textContent = 'Continue';
         // 显示“暂停”模态框
         pauseModal.style.display = 'flex';
       }
@@ -596,7 +596,7 @@
     /***** “继续游戏”按钮功能（隐藏模态框并恢复游戏） *****/
     resumeBtn.addEventListener('click', () => {
       paused = false;
-      pauseBtn.textContent = '暂停';
+      pauseBtn.textContent = 'Paused';
       pauseModal.style.display = 'none';
       // 重新启动主循环
       gameInterval = setInterval(gameLoop, intervalTime);
