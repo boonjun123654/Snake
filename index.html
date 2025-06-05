@@ -339,7 +339,8 @@ html, body {
     let score = 0;                // 当前得分
     let gameInterval = null;      // 主循环定时器
     let intervalTime = 150;       // 帧间隔（根据难度调整）
-    let paused = false;           // 暂停状态标志
+    let paused = false;
+    let directionChanged = false;           // 暂停状态标志
 
     // 每个格子的像素大小：400 / 16 = 25px
     const CELL_SIZE = canvas.width / COLS;
@@ -439,6 +440,7 @@ html, body {
     function gameLoop() {
       if (paused) return;
 
+      directionChanged = false;
       // 计算新蛇头
       const head = {
         x: snake[0].x + direction.x,
@@ -556,11 +558,14 @@ html, body {
 
     /***** 方向切换（防止瞬间反向调头） *****/
     function changeDirection(newDir) {
+
+      if (directionChanged) return;
       if ((newDir.x === -direction.x && newDir.y === 0) ||
           (newDir.y === -direction.y && newDir.x === 0)) {
         return;
       }
       direction = newDir;
+      directionChanged = true;
     }
 
     /***** 键盘监听 *****/
